@@ -1,0 +1,2797 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI动态追踪 | AI Product Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700;1,9..40,400&family=Space+Grotesk:wght@400;500;600;700&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0b;
+            --bg-secondary: #111113;
+            --bg-tertiary: #18181b;
+            --bg-card: #1c1c1f;
+            --bg-hover: #242428;
+            --text-primary: #fafafa;
+            --text-secondary: #a1a1aa;
+            --text-muted: #71717a;
+            --accent-primary: #f97316;
+            --accent-secondary: #fb923c;
+            --accent-glow: rgba(249, 115, 22, 0.15);
+            --border-subtle: rgba(255, 255, 255, 0.06);
+            --border-active: rgba(249, 115, 22, 0.4);
+            --success: #22c55e;
+            --warning: #eab308;
+            --error: #ef4444;
+            --info: #3b82f6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 700;
+            color: white;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .logo-text h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .logo-text p {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .refresh-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .refresh-btn:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+            border-color: var(--border-active);
+        }
+
+        .refresh-btn.loading svg {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .last-update {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 280px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 16px 12px 44px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--border-active);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .search-box input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .search-box svg {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 18px;
+            height: 18px;
+            color: var(--text-muted);
+        }
+
+        .filter-select {
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 14px;
+            cursor: pointer;
+            min-width: 140px;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--border-active);
+        }
+
+        .tab-bar {
+            display: flex;
+            gap: 4px;
+            background: var(--bg-secondary);
+            padding: 4px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .tab-btn.active {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .tab-btn .badge {
+            background: var(--accent-primary);
+            color: white;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 20px;
+        }
+
+        .product-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 24px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .product-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .product-card:hover {
+            border-color: var(--border-active);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .product-card:hover::before {
+            opacity: 1;
+        }
+
+        .product-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .product-logo {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .product-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .icon-btn:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .icon-btn.favorited {
+            background: var(--accent-glow);
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
+        .product-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .product-company {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+
+        .product-meta {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .meta-tag {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: var(--bg-secondary);
+            border-radius: 6px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .meta-tag.region {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--info);
+        }
+
+        .meta-tag.date {
+            background: rgba(34, 197, 94, 0.1);
+            color: var(--success);
+        }
+
+        .meta-tag.category {
+            background: rgba(168, 85, 247, 0.1);
+            color: #a855f7;
+        }
+
+        .product-description {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .product-features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .feature-tag {
+            padding: 6px 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .product-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .product-link {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--accent-primary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .product-link:hover {
+            color: var(--accent-secondary);
+        }
+
+        .tech-stack {
+            display: flex;
+            gap: 6px;
+        }
+
+        .tech-tag {
+            padding: 4px 8px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .stats-bar {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 24px;
+            padding: 16px 20px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-value {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .notification {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            padding: 16px 24px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-active);
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .notification.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .notification-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--accent-glow);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-primary);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 32px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.show .modal {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .modal-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-secondary);
+            border: none;
+            border-radius: 10px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .modal-close:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .favorites-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .favorite-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            transition: background 0.2s ease;
+        }
+
+        .favorite-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .favorite-item-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .favorite-item-logo {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .favorite-item-name {
+            font-weight: 500;
+        }
+
+        .favorite-item-company {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .no-favorites {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+
+        .news-modal-content {
+            line-height: 1.8;
+            color: var(--text-secondary);
+            font-size: 15px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .news-modal-content h4 {
+            color: var(--text-primary);
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .news-modal-content p {
+            margin-bottom: 12px;
+        }
+
+        .news-modal-footer {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .news-modal-source-link {
+            color: var(--accent-primary);
+            font-size: 14px;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .news-modal-source-link:hover {
+            color: var(--accent-secondary);
+        }
+
+        @media (max-width: 768px) {
+            .app-container {
+                padding: 16px;
+            }
+
+            header {
+                flex-direction: column;
+                gap: 16px;
+                align-items: flex-start;
+            }
+
+            .products-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-bar {
+                flex-direction: column;
+            }
+
+            .search-box {
+                min-width: 100%;
+            }
+        }
+
+        .news-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .news-header-bar {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .news-search-box {
+            display: flex;
+            align-items: center;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 24px;
+            padding: 4px 16px;
+            flex: 1;
+            max-width: 400px;
+            min-width: 200px;
+        }
+
+        .news-search-box input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-primary);
+            font-size: 14px;
+            width: 100%;
+            padding: 6px 0;
+        }
+
+        .news-search-box input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .news-search-clear {
+            cursor: pointer;
+            color: var(--text-muted);
+            font-size: 14px;
+            padding: 4px;
+            margin-left: 8px;
+        }
+
+        .news-search-clear:hover {
+            color: var(--text-primary);
+        }
+
+        .news-count-info {
+            grid-column: 1 / -1;
+            font-size: 13px;
+            color: var(--text-muted);
+            padding: 8px 0;
+            margin-bottom: 8px;
+        }
+
+        .news-time-filter {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            margin-bottom: 16px;
+            color: white;
+        }
+
+        .time-filter-icon {
+            font-size: 16px;
+        }
+
+        .time-filter-text {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .time-filter-range {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-left: auto;
+        }
+
+        .news-empty {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+        }
+
+        .news-empty-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .news-empty-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .news-empty-desc {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .news-pagination {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            padding: 24px 0;
+            margin-top: 16px;
+        }
+
+        .page-btn {
+            padding: 10px 20px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .page-btn:hover:not(.disabled) {
+            background: var(--accent-color);
+            border-color: var(--accent-color);
+            color: white;
+        }
+
+        .page-btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .page-info {
+            font-size: 14px;
+            color: var(--text-muted);
+            padding: 0 12px;
+        }
+
+        .news-grid mark {
+            background: #FFE066;
+            color: #333;
+            padding: 1px 3px;
+            border-radius: 3px;
+        }
+
+        .news-auto-update {
+            font-size: 13px;
+            color: var(--text-muted);
+            background: var(--bg-tertiary);
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid var(--border-subtle);
+            white-space: nowrap;
+        }
+
+        .news-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .news-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .news-card:hover {
+            border-color: var(--border-active);
+            transform: translateY(-2px);
+            background: var(--bg-hover);
+        }
+
+        .news-card:hover::before {
+            opacity: 1;
+        }
+
+        .news-card.hot {
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .news-card.hot::before {
+            background: linear-gradient(90deg, #ef4444, #f97316);
+            opacity: 1;
+        }
+
+        .news-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .news-hot {
+            background: linear-gradient(135deg, #ef4444, #f97316);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .news-date {
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .news-title {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+
+        .news-summary {
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.7;
+            margin-bottom: 16px;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .news-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .news-source {
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .news-read-more {
+            color: var(--accent-primary);
+            font-size: 13px;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .news-card:hover .news-read-more {
+            color: var(--accent-secondary);
+        }
+
+        @media (max-width: 768px) {
+            .news-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .stagger-1 { animation-delay: 0.05s; }
+        .stagger-2 { animation-delay: 0.1s; }
+        .stagger-3 { animation-delay: 0.15s; }
+        .stagger-4 { animation-delay: 0.2s; }
+        .stagger-5 { animation-delay: 0.25s; }
+        .stagger-6 { animation-delay: 0.3s; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <div class="logo-section">
+                <div class="logo">AI</div>
+                <div class="logo-text">
+                    <h1>AI动态追踪</h1>
+                    <p>实时追踪全球AI产品最新动态</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <span class="last-update" id="lastUpdate"></span>
+                <button class="refresh-btn" id="refreshBtn" onclick="refreshData()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/>
+                    </svg>
+                    刷新数据
+                </button>
+                <button class="icon-btn" onclick="showFavorites()" title="我的收藏">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <div class="stats-bar" id="statsBar">
+            <div class="stat-item">
+                <span class="stat-value" id="totalCount">0</span>
+                <span class="stat-label">总产品数</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="overseasCount">0</span>
+                <span class="stat-label">海外产品</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="domesticCount">0</span>
+                <span class="stat-label">国内产品</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="thisMonthCount">0</span>
+                <span class="stat-label">本月新增</span>
+            </div>
+        </div>
+
+        <div class="filter-bar" id="searchSection">
+            <div class="search-box">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.3-4.3"></path>
+                </svg>
+                <input type="text" id="searchInput" placeholder="搜索产品名称、公司或功能..." oninput="filterProducts()">
+            </div>
+            <select class="filter-select" id="regionFilter" onchange="filterProducts()">
+                <option value="all">全部地区</option>
+                <option value="overseas">海外硅谷</option>
+                <option value="domestic">国内</option>
+            </select>
+            <select class="filter-select" id="categoryFilter" onchange="filterProducts()">
+                <option value="all">全部分类</option>
+                <option value="LLM">大语言模型</option>
+                <option value="Multimodal">多模态模型</option>
+                <option value="Agent">AI智能体</option>
+                <option value="Image">图像生成</option>
+                <option value="Video">视频生成</option>
+                <option value="Audio">音频/音乐</option>
+                <option value="Writing">AI写作</option>
+                <option value="Design">设计工具</option>
+                <option value="DevTools">开发工具</option>
+                <option value="DevPlatform">开发平台</option>
+                <option value="Productivity">生产力工具</option>
+                <option value="Search">AI搜索</option>
+                <option value="Learning">AI学习</option>
+            </select>
+        </div>
+
+        <div class="tab-bar">
+            <button class="tab-btn active" data-tab="news" onclick="switchTab('news')">
+                📰 资讯 <span class="badge" id="tabNews">0</span>
+            </button>
+            <button class="tab-btn" data-tab="all" onclick="switchTab('all')">
+                全部 <span class="badge" id="tabAll">0</span>
+            </button>
+            <button class="tab-btn" data-tab="overseas" onclick="switchTab('overseas')">
+                🔶 海外 <span class="badge" id="tabOverseas">0</span>
+            </button>
+            <button class="tab-btn" data-tab="domestic" onclick="switchTab('domestic')">
+                🇨🇳 国内 <span class="badge" id="tabDomestic">0</span>
+            </button>
+            <button class="tab-btn" data-tab="favorites" onclick="switchTab('favorites')">
+                ⭐ 收藏 <span class="badge" id="tabFavorites">0</span>
+            </button>
+        </div>
+
+        <div class="products-grid" id="productsGrid">
+        </div>
+
+        <div class="empty-state" id="emptyState" style="display: none;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.3-4.3"></path>
+            </svg>
+            <h3>没有找到相关产品</h3>
+            <p>尝试调整搜索条件或筛选器</p>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="favoritesModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">我的收藏</h2>
+                <button class="modal-close" onclick="closeFavorites()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6 6 18"></path>
+                        <path d="m6 6 12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="favorites-list" id="favoritesList">
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="newsModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title" id="newsModalTitle">资讯详情</h2>
+                <button class="modal-close" onclick="closeNewsModal()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6 6 18"></path>
+                        <path d="m6 6 12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="news-modal-content" id="newsModalContent">
+            </div>
+            <div class="news-modal-footer">
+                <a href="#" id="newsModalLink" target="_blank" class="news-modal-source-link">
+                    查看原文 →
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="notification" id="notification">
+        <div class="notification-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+        </div>
+        <span id="notificationText">数据已更新</span>
+    </div>
+
+    <script>
+        const aiProducts = [
+            // ==================== 美国AI产品 ====================
+            // 大语言模型
+            {
+                id: 1,
+                name: "ChatGPT",
+                company: "OpenAI",
+                region: "overseas",
+                location: "🇺🇸 硅谷",
+                date: "2026-03-10",
+                category: "LLM",
+                description: "OpenAI推出的AI聊天机器人，现已更新至GPT-5.4模型。2026年3月发布的最新版本支持自动操作电脑、执行复杂任务，从智能对话助手进化为能直接操作设备的智能体。",
+                features: ["自动操作电脑", "多模态理解", "代码编写", "任务执行", "语音交互"],
+                tech: ["Transformer", "RLHF", "GPT-5.4", "Agent"],
+                link: "https://chat.openai.com",
+                color: "#10A37F"
+            },
+            {
+                id: 2,
+                name: "Claude Opus 4.6",
+                company: "Anthropic",
+                region: "overseas",
+                location: "🇺🇸 硅谷",
+                date: "2026-02-05",
+                category: "LLM",
+                description: "Anthropic于2026年2月发布的最新旗舰模型，首次将100万Token上下文窗口带给Opus级别模型。具备混合推理能力，在复杂任务处理和安全可控性方面处于行业领先地位。",
+                features: ["100万Token上下文", "混合推理", "代码理解", "工具使用", "企业级安全"],
+                tech: ["Transformer", "RLHF", "Constitutional AI", "混合推理"],
+                link: "https://www.anthropic.com/claude",
+                color: "#7C3AED"
+            },
+            {
+                id: 3,
+                name: "GPT-5",
+                company: "OpenAI",
+                region: "overseas",
+                location: "🇺🇸 硅谷",
+                date: "2026-01-15",
+                category: "LLM",
+                description: "OpenAI最新大语言模型，支持GPT-5.3-Codex（编程增强版）和GPT-5.3 Instant（日常对话版）。实现了真正的多模态理解和生成能力，支持自动操作电脑。",
+                features: ["多模态理解", "代码专家模式", "自动操作", "实时知识", "个性化"],
+                tech: ["MoE", "Self-Play RL", "Agent能力"],
+                link: "https://openai.com/gpt-5",
+                color: "#10A37F"
+            },
+            {
+                id: 4,
+                name: "Gemini 3 Pro",
+                company: "Google DeepMind",
+                region: "overseas",
+                location: "🇺🇸 硅谷",
+                date: "2026-03-15",
+                category: "Multimodal",
+                description: "Google DeepMind发布的最新多模态旗舰模型，被称为\"思考型AI\"。集成Lyria 3音乐生成模型，Deep Research功能可5分钟生成46页学术论文，是综合能力最强的AI助手之一。",
+                features: ["视频理解", "代码生成", "Deep Research", "音乐生成", "长上下文", "Gemini 3"],
+                tech: ["Gemma", "Lyria 3", "Deep Research"],
+                link: "https://deepmind.google/gemini",
+                color: "#4285F4"
+            },
+            {
+                id: 5,
+                name: "Grok 3",
+                company: "xAI",
+                region: "overseas",
+                location: "🇺🇸 硅谷",
+                date: "2025-12-20",
+                category: "LLM",
+                description: "xAI发布的大模型Grok 3，强调实时信息获取和趣味性交互。与X（原Twitter）平台深度整合，支持实时搜索和个性化回复，是最有趣的AI助手之一。",
+                features: ["实时知识", "X平台整合", "推理能力", "个性化", "幽默交互"],
+                tech: ["MoE", "RLHF", "实时搜索"],
+                link: "https://x.ai/grok",
+                color: "#000000"
+            },
+            {
+                id: 6,
+                name: "Llama 4",
+                company: "Meta",
+                region: "overseas",
+                location: "🇺🇸 硅谷",
+                date: "2025-10-10",
+                category: "LLM",
+                description: "Meta发布的最新开源大语言模型，延续开源策略。提供强大的AI基础能力，支持微调和本地部署，是开发者社区最受欢迎的开源模型之一。",
+                features: ["开源免费", "多语言", "高效推理", "微调友好", "社区支持"],
+                tech: ["MoE", "Open Source", "Meta AI"],
+                link: "https://ai.meta.com/llama",
+                color: "#0668E1"
+            },
+            // 图像生成
+            {
+                id: 7,
+                name: "Midjourney V7",
+                company: "Midjourney",
+                region: "overseas",
+                location: "🇺🇸 硅谷",
+                date: "2026-01-20",
+                category: "Image",
+                description: "2026年AI图像生成领域的领导者，V7版本在艺术连贯性和商品质感还原上实现重大突破。全面上线网页版，Elo评分约1138。发布Niji 7动漫引擎，专业能力大幅提升。",
+                features: ["网页版上线", "Niji 7动漫引擎", "自然瑕疵建模", "高分辨率", "角色一致性"],
+                tech: ["Diffusion", "Niji 7", "Web UI"],
+                link: "https://midjourney.com",
+                color: "#F59E0B"
+            },
+            {
+                id: 8,
+                name: "DALL-E 4",
+                company: "OpenAI",
+                region: "overseas",
+                location: "🇺🇸 硅谷",
+                date: "2025-11-15",
+                category: "Image",
+                description: "OpenAI最新图像生成模型，在图像质量、prompt理解和编辑能力方面有显著提升。与GPT系列深度集成，支持图像编辑和变体生成。",
+                features: ["图像生成", "图像编辑", "变体生成", "风格迁移", "高分辨率"],
+                tech: ["Diffusion", "CLIP", "GPT-4"],
+                link: "https://openai.com/dall-e-3",
+                color: "#10A37F"
+            },
+            {
+                id: 9,
+                name: "Adobe Firefly",
+                company: "Adobe",
+                region: "overseas",
+                location: "🇺🇸 硅谷",
+                date: "2025-10-20",
+                category: "Image",
+                description: "Adobe推出的AI创意生成工具，2026年全面升级。与Photoshop、Illustrator等全家桶深度集成，支持AI扩图、矢量图生成、商用安全授权等功能。",
+                features: ["AI扩图", "矢量生成", "创意填充", "商用安全", "生态集成"],
+                tech: ["Firefly AI", "Adobe Sensei"],
+                link: "https://www.adobe.com/firefly",
+                color: "#FF0000"
+            },
+            {
+                id: 10,
+                name: "Stable Diffusion 4",
+                company: "Stability AI",
+                region: "overseas",
+                location: "🇺🇸 硅谷",
+                date: "2025-09-10",
+                category: "Image",
+                description: "Stability AI发布的开源图像生成模型，在图像质量和生成速度方面有大幅提升。完全开源可商用，支持本地部署和高度定制化。",
+                features: ["开源免费", "本地部署", "高速生成", "高画质", "定制化强"],
+                tech: ["Diffusion", "OpenVINO", "LCM"],
+                link: "https://stability.ai",
+                color: "#0F172A"
+            },
+            // 视频生成
+            {
+                id: 11,
+                name: "Sora 2",
+                company: "OpenAI",
+                region: "overseas",
+                location: "🇺🇸 硅谷",
+                date: "2025-09-30",
+                category: "Video",
+                description: "OpenAI于2025年9月发布的第二代视频生成模型，被定位为\"世界模拟器\"。2026年API重大升级，支持角色一致性、20秒时长、双比例输出等专业功能。",
+                features: ["世界模拟", "20秒时长", "角色一致性", "双比例输出", "API批量生产"],
+                tech: ["DiT", "Spacetime", "VAE"],
+                link: "https://openai.com/sora",
+                color: "#FF4400"
+            },
+            {
+                id: 12,
+                name: "Runway Gen-4",
+                company: "Runway",
+                region: "overseas",
+                location: "🇺🇸 硅谷",
+                date: "2025-12-10",
+                category: "Video",
+                description: "Runway最新视频生成平台，定位为\"创作者平台\"而非单纯生成器。优先考虑可用性和生产工作流集成，支持4K输出、专业绿幕处理和丰富的特效功能。",
+                features: ["4K输出", "绿幕处理", "特效添加", "工作流集成", "专业导出"],
+                tech: ["Gen-4", "Video Diffusion"],
+                link: "https://runwayml.com",
+                color: "#9333EA"
+            },
+            {
+                id: 13,
+                name: "Pika 2.0",
+                company: "Pika Labs",
+                region: "overseas",
+                location: "🇺🇸 硅谷",
+                date: "2025-10-15",
+                category: "Video",
+                description: "Pika Labs发布的视频生成工具，在生成速度和视频质量方面有显著提升。操作简单易上手，支持文字转视频和图片转视频功能。",
+                features: ["文字转视频", "图片转视频", "视频编辑", "快速生成", "多风格"],
+                tech: ["Pika Engine", "Video AI"],
+                link: "https://pika.art",
+                color: "#EC4899"
+            },
+            // 音频/音乐生成
+            {
+                id: 14,
+                name: "Suno V4",
+                company: "Suno AI",
+                region: "overseas",
+                location: "🇺🇸 硅谷",
+                date: "2025-02-15",
+                category: "Audio",
+                description: "Suno最新音乐生成AI，支持生成更复杂、更高质量的音乐作品。新增style mixing和stem extraction功能。",
+                features: ["音乐生成", "风格混合", "多轨分离", "高质量音频", "歌词生成"],
+                tech: ["Diffusion", "Music LM", "Stem Separation"],
+                link: "https://suno.ai",
+                color: "#EC4899"
+            },
+            {
+                id: 15,
+                name: "ElevenLabs",
+                company: "ElevenLabs",
+                region: "overseas",
+                location: "🇺🇸 硅谷",
+                date: "2025-01-20",
+                category: "Audio",
+                description: "AI语音合成领域的领导者，提供高质量的语音克隆和语音生成服务。支持28种语言，语音自然流畅。",
+                features: ["语音克隆", "语音合成", "多语言", "情感控制", "音效生成"],
+                tech: ["Deep Learning", "TTS", "Voice Cloning"],
+                link: "https://elevenlabs.io",
+                color: "#F97316"
+            },
+            // 设计工具
+            {
+                id: 16,
+                name: "Figma AI",
+                company: "Figma",
+                region: "overseas",
+                location: "🇺🇸 硅谷",
+                date: "2026-01-10",
+                category: "Design",
+                description: "Figma推出的AI设计功能，Make Design基于Claude 3.7实现从提示到代码生成。用户可通过AI聊天将设计想法转化为可交互原型，是2026年主流AI原型工具之一。",
+                features: ["Make Design", "文本建站", "Claude 3.7", "原型生成", "设计转代码"],
+                tech: ["Figma AI", "Claude 3.7", "Prompt-to-Code"],
+                link: "https://www.figma.com",
+                color: "#F24E1E"
+            },
+            {
+                id: 17,
+                name: "Canva AI",
+                company: "Canva",
+                region: "overseas",
+                location: "🇺🇸 硅谷",
+                date: "2025-02-01",
+                category: "Design",
+                description: "Canva推出的AI设计助手，支持自动生成海报、Logo、演示文稿等。提供海量模板，非专业人士也能快速上手。",
+                features: ["自动设计", "模板推荐", "智能排版", "文案生成", "品牌管理"],
+                tech: ["Canva AI", "Design AI"],
+                link: "https://www.canva.com",
+                color: "#00C4CC"
+            },
+            {
+                id: 18,
+                name: "Framer AI",
+                company: "Framer",
+                region: "overseas",
+                location: "🇺🇸 硅谷",
+                date: "2025-01-25",
+                category: "Design",
+                description: "Framer推出的AI网站设计工具，可通过文本描述快速生成完整的响应式网站。设计到代码一步到位。",
+                features: ["文本建站", "AI原型", "响应式设计", "CMS集成", "发布上线"],
+                tech: ["Framer AI", "React", "Design to Code"],
+                link: "https://www.framer.com",
+                color: "#0055FF"
+            },
+            {
+                id: 19,
+                name: "Uizard",
+                company: "Uizard",
+                region: "overseas",
+                location: "🇺🇸 硅谷",
+                date: "2025-01-15",
+                category: "Design",
+                description: "AI驱动的UI设计工具，可将截图、草图快速转换为可编辑的设计文件。支持App、Web、多平台设计。",
+                features: ["截图转设计", "草图识别", "UI生成", "主题定制", "团队协作"],
+                tech: ["Computer Vision", "Design AI"],
+                link: "https://uizard.io",
+                color: "#6366F1"
+            },
+            // 开发工具
+            {
+                id: 20,
+                name: "Cursor 2.4",
+                company: "Anysphere",
+                region: "overseas",
+                location: "🇺🇸 硅谷",
+                date: "2026-01-15",
+                category: "DevTools",
+                description: "AI原生开发轻量化IDE，2026年更新至2.4版本后正式迈入\"云端智能体\"阶段。支持MCP协议，可上传知识到飞书等专业平台，是专业开发者打造\"软件智能工厂\"的核心工具。",
+                features: ["云端智能体", "MCP协议", "项目理解", "自然语言编程", "智能重构"],
+                tech: ["LLM", "RAG", "MCP", "Tree-sitter"],
+                link: "https://cursor.sh",
+                color: "#6366F1"
+            },
+            {
+                id: 21,
+                name: "Bolt.new",
+                company: "StackBlitz",
+                region: "overseas",
+                location: "🇺🇸 硅谷",
+                date: "2025-12-20",
+                category: "DevTools",
+                description: "StackBlitz推出的AI全栈Web开发平台，基于WebContainers技术可直接在浏览器中创建、运行和部署全栈应用。输入一句话描述即可在几秒内生成完整项目。",
+                features: ["自然语言开发", "全栈生成", "即时预览", "一键部署", "WebContainers"],
+                tech: ["LLM", "WebContainer", "AI Code Gen"],
+                link: "https://bolt.new",
+                color: "#2563EB"
+            },
+            {
+                id: 22,
+                name: "Lovable",
+                company: "Lovable",
+                region: "overseas",
+                location: "🇺🇸 硅谷",
+                date: "2025-11-10",
+                category: "DevTools",
+                description: "AI驱动的Web应用开发平台，基于React、TypeScript和Tailwind CSS构建。支持自然语言描述生成完整应用，是Vibe Coding赛道的代表性产品之一。",
+                features: ["自然语言编程", "React生成", "shadcn/ui组件", "数据库集成", "部署发布"],
+                tech: ["React", "TypeScript", "Tailwind", "AI"],
+                link: "https://lovable.dev",
+                color: "#8B5CF6"
+            },
+            {
+                id: 23,
+                name: "GitHub Copilot",
+                company: "Microsoft",
+                region: "overseas",
+                location: "🇺🇸 硅谷",
+                date: "2025-10-15",
+                category: "DevTools",
+                description: "GitHub推出的AI编程助手，基于OpenAI的GPT-4模型。为开发者提供代码补全、生成、解释、Bug修复等能力。是全球使用最广泛的AI编程工具。",
+                features: ["代码补全", "代码生成", "代码解释", "Bug修复", "单元测试"],
+                tech: ["GPT-4", "Codex", "LLM"],
+                link: "https://github.com/features/copilot",
+                color: "#238636"
+            },
+            {
+                id: 24,
+                name: "Windsurf",
+                company: "Codeium",
+                region: "overseas",
+                location: "🇺🇸 硅谷",
+                date: "2025-10-01",
+                category: "DevTools",
+                description: "Codeium推出的AI IDE，专注于提供流畅的AI编程体验。拥有独特的Flow机制，可理解整个代码库上下文，支持跨文件智能编辑。",
+                features: ["智能补全", "代码生成", "项目感知", "Flow模式", "跨文件编辑"],
+                tech: ["Codeium AI", "Context Awareness"],
+                link: "https://codeium.com/windsurf",
+                color: "#10B981"
+            },
+            // 生产力工具
+            {
+                id: 25,
+                name: "Notion AI",
+                company: "Notion",
+                region: "overseas",
+                location: "🇺🇸 硅谷",
+                date: "2025-01-20",
+                category: "Productivity",
+                description: "Notion推出的AI助手，集成于笔记和项目管理功能中。支持自动总结会议纪要、生成任务清单、知识管理等。",
+                features: ["AI写作", "智能总结", "任务管理", "知识库", "团队协作"],
+                tech: ["Notion AI", "LLM"],
+                link: "https://www.notion.so/product/ai",
+                color: "#000000"
+            },
+            {
+                id: 26,
+                name: "Grammarly",
+                company: "Grammarly",
+                region: "overseas",
+                location: "🇺🇸 硅谷",
+                date: "2025-01-15",
+                category: "Productivity",
+                description: "AI驱动的写作辅助工具，提供语法检查、风格优化、语气调整等功能。支持网页、桌面、移动端全平台。",
+                features: ["语法检查", "风格优化", "语气建议", "抄袭检测", "词汇丰富"],
+                tech: ["NLP", "Grammar AI"],
+                link: "https://www.grammarly.com",
+                color: "#15C39A"
+            },
+            {
+                id: 27,
+                name: "Gamma",
+                company: "Gamma",
+                region: "overseas",
+                location: "🇺🇸 硅谷",
+                date: "2025-02-05",
+                category: "Productivity",
+                description: "AI驱动的PPT生成工具，通过自然语言描述即可生成精美的演示文稿。支持一键生成网页、文档、PPT。",
+                features: ["AI生成PPT", "智能排版", "模板丰富", "一键美化", "协作共享"],
+                tech: ["Gamma AI", "LLM", "Design AI"],
+                link: "https://gamma.app",
+                color: "#F97316"
+            },
+            {
+                id: 28,
+                name: "Copilot Workspace",
+                company: "Microsoft",
+                region: "overseas",
+                location: "🇺🇸 硅谷",
+                date: "2025-02-20",
+                category: "Productivity",
+                description: "Microsoft发布的全新AI工作空间产品，通过自然语言实现完整的工作流自动化。深度集成Windows和Office生态。",
+                features: ["工作流自动化", "智能助手", "文档处理", "数据分析", "会议纪要"],
+                tech: ["GPT-4", "Copilot Stack", "M365"],
+                link: "https://copilot.microsoft.com",
+                color: "#00A4EF"
+            },
+            // AI搜索
+            {
+                id: 29,
+                name: "Perplexity Pro",
+                company: "Perplexity AI",
+                region: "overseas",
+                location: "🇺🇸 硅谷",
+                date: "2025-02-10",
+                category: "Search",
+                description: "Perplexity AI推出的Pro版本搜索助手，支持无限使用和专业搜索功能。答案更加精准和可追溯。",
+                features: ["AI搜索", "答案溯源", "专业搜索", "无限使用", "文件分析"],
+                tech: ["LLM", "Search API", "RAG"],
+                link: "https://perplexity.ai/pro",
+                color: "#8B5CF6"
+            },
+            {
+                id: 30,
+                name: "Arc Search",
+                company: "The Browser Company",
+                region: "overseas",
+                location: "🇺🇸 硅谷",
+                date: "2025-01-30",
+                category: "Search",
+                description: "Arc浏览器推出的AI搜索功能，提供智能化的网页搜索和内容摘要。支持AI驱动的浏览体验。",
+                features: ["AI搜索", "内容摘要", "智能浏览", "广告拦截", "隐私保护"],
+                tech: ["Arc AI", "Browser AI"],
+                link: "https://arc.net",
+                color: "#FF6B35"
+            },
+
+            // ==================== 中国AI产品 ====================
+            // 大语言模型
+            {
+                id: 31,
+                name: "通义千问 Qwen3",
+                company: "阿里巴巴",
+                region: "domestic",
+                location: "🇨🇳 杭州",
+                date: "2026-02-04",
+                category: "LLM",
+                description: "阿里巴巴发布的最新千问大模型，国内首个\"混合推理模型\"，将\"快思考\"与\"慢思考\"集成进同一模型。2026年2月发布Qwen3-Coder-Next，专为编码代理和本地开发场景打造。",
+                features: ["混合推理", "中文优化", "代码能力", "Agent能力", "开源可商"],
+                tech: ["MoE", "混合推理", "GRPO"],
+                link: "https://tongyi.aliyun.com",
+                color: "#FF6A00"
+            },
+            {
+                id: 32,
+                name: "DeepSeek V3",
+                company: "深度求索",
+                region: "domestic",
+                location: "🇨🇳 北京",
+                date: "2026-03-11",
+                category: "LLM",
+                description: "深度求索发布的最新开源大模型，参数量671亿，激活参数37亿。在14.8T高质量token上预训练，性能达到开源SOTA水平，超越Llama 3.1 405B和GPT-4o。",
+                features: ["671亿参数", "开源免费", "代码能力", "数学推理", "高效推理"],
+                tech: ["MoE", "MLA", "FP8混合精度"],
+                link: "https://www.deepseek.com",
+                color: "#2563EB"
+            },
+            {
+                id: 33,
+                name: "文心一言 5.0",
+                company: "百度",
+                region: "domestic",
+                location: "🇨🇳 北京",
+                date: "2025-11-20",
+                category: "LLM",
+                description: "百度发布的最新文心一言大模型，在中文理解、创作能力和知识增强方面有显著提升。首次引入知识图谱融合技术，持续领跑国内大模型市场。",
+                features: ["中文理解", "知识增强", "创意写作", "多模态", "行业应用"],
+                tech: ["ERNIE", "Knowledge Graph", "Plugin"],
+                link: "https://yiyan.baidu.com",
+                color: "#2932E1"
+            },
+            {
+                id: 34,
+                name: "Kimi K2.5",
+                company: "月之暗面",
+                region: "domestic",
+                location: "🇨🇳 北京",
+                date: "2026-01-27",
+                category: "LLM",
+                description: "月之暗面于2026年1月发布并开源的新一代模型，基于原生多模态架构，集成视觉理解、编程、智能体调度等能力。在多项Agent权威评测中取得全球开源模型领先成绩。",
+                features: ["开源", "原生多模态", "Agent能力", "Kimi Claw", "200K上下文"],
+                tech: ["Long Context", "MoE", "Agent"],
+                link: "https://kimi.moonshot.cn",
+                color: "#8B5CF6"
+            },
+            {
+                id: 34.1,
+                name: "OpenCLAW",
+                company: "彼得·斯坦伯格",
+                region: "overseas",
+                location: "�� 奥地利",
+                date: "2025-11-01",
+                category: "AI智能体",
+                description: "奥地利程序员彼得·斯坦伯格开发的开源AI智能体，于2025年11月推出。该智能体具备本地数据主动采集能力，可在未经用户明确授权的情况下自动读取终端敏感信息，并结合系统级权限实现远程控制。",
+                features: ["本地数据采集", "敏感信息读取", "系统级权限", "远程控制", "开源"],
+                tech: ["AI Agent", "系统权限"],
+                link: "https://github.com",
+                color: "#DC2626"
+            },
+            {
+                id: 35,
+                name: "讯飞星火 4.0",
+                company: "科大讯飞",
+                region: "domestic",
+                location: "🇨🇳 合肥",
+                date: "2025-10-15",
+                category: "LLM",
+                description: "科大讯飞发布的最新星火大模型，在语音识别、多语种翻译和教育应用方面表现突出。语音合成更加自然流畅，是国内语音AI领域的领导者。",
+                features: ["语音识别", "多语种翻译", "语音合成", "教育应用", "情感交互"],
+                tech: ["Speech LM", "TTS", "OCR"],
+                link: "https://xinghuo.xfyun.cn",
+                color: "#00C8FF"
+            },
+            {
+                id: 36,
+                name: "腾讯元宝 3.0",
+                company: "腾讯",
+                region: "domestic",
+                location: "🇨🇳 深圳",
+                date: "2025-11-10",
+                category: "Assistant",
+                description: "腾讯发布的最新AI助手产品，深度集成微信生态。在社交、内容创作和办公场景中有独特优势，是国内最具社交属性的AI助手。",
+                features: ["微信集成", "内容创作", "智能问答", "办公效率", "多模态"],
+                tech: ["混元", "WeChat SDK", "RAG"],
+                link: "https://yuanbao.tencent.com",
+                color: "#12B7F5"
+            },
+            {
+                id: 37,
+                name: "豆包",
+                company: "字节跳动",
+                region: "domestic",
+                location: "🇨🇳 北京",
+                date: "2025-10-20",
+                category: "Assistant",
+                description: "字节跳动推出的AI助手，支持多模态交互和智能家居控制。在国内拥有海量用户基础，是国内最受欢迎的AI聊天机器人之一。",
+                features: ["智能对话", "多模态交互", "语音助手", "内容生成", "智能家居"],
+                tech: ["字节大模型", "多模态AI"],
+                link: "https://www.doubao.com",
+                color: "#FE6B00"
+            },
+            // 图像/视频生成
+            {
+                id: 38,
+                name: "即梦AI",
+                company: "字节跳动",
+                region: "domestic",
+                location: "🇨🇳 北京",
+                date: "2025-11-15",
+                category: "Image",
+                description: "字节跳动推出的AI图像和视频生成工具，图生视频支持首尾帧调整，对口型功能强大。适合创意短视频制作，是国内领先的AI创作平台。",
+                features: ["图生视频", "视频编辑", "对口型", "风格迁移", "创意生成"],
+                tech: ["字节AI", "Video Generation"],
+                link: "https://jimeng.jike.ai",
+                color: "#3B82F6"
+            },
+            {
+                id: 39,
+                name: "剪映AI版",
+                company: "字节跳动",
+                region: "domestic",
+                location: "🇨🇳 北京",
+                date: "2025-10-10",
+                category: "Video",
+                description: "国民级视频剪辑工具剪映的AI版本，集成AI文字生成视频、数字人、音色克隆等功能。是国内用户最多的视频剪辑AI工具。",
+                features: ["文字转视频", "数字人", "音色克隆", "智能剪辑", "特效生成"],
+                tech: ["剪映AI", "Video AI"],
+                link: "https://www.capcut.cn",
+                color: "#09B83E"
+            },
+            {
+                id: 40,
+                name: "可灵AI",
+                company: "快手",
+                region: "domestic",
+                location: "🇨🇳 北京",
+                date: "2025-10-20",
+                category: "Video",
+                description: "快手推出的AI视频生成工具，在视频质量和生成速度方面表现出色。是国产视频生成领域的领先者，支持文生视频和图生视频。",
+                features: ["文生视频", "图生视频", "视频编辑", "高画质", "快速生成"],
+                tech: ["KLING AI", "Video Diffusion"],
+                link: "https://klingai.kuaishou.com",
+                color: "#FF4906"
+            },
+            // 设计工具
+            {
+                id: 41,
+                name: "Pixso AI",
+                company: "即时设计",
+                region: "domestic",
+                location: "🇨🇳 北京",
+                date: "2025-11-15",
+                category: "Design",
+                description: "国产AI设计工具，提供智能UI设计、图标生成、海报创作等功能。国内设计团队使用广泛，是Figma在国内的主要替代工具。",
+                features: ["AI生成UI", "智能图标", "海报生成", "设计规范", "团队协作"],
+                tech: ["Pixso AI", "Design AI"],
+                link: "https://pixso.cn",
+                color: "#0066FF"
+            },
+            {
+                id: 42,
+                name: "稿定AI",
+                company: "稿定科技",
+                region: "domestic",
+                location: "🇨🇳 厦门",
+                date: "2025-10-20",
+                category: "Design",
+                description: "稿定设计推出的AI工具，支持智能抠图、海报生成、电商主图制作等功能。是国内电商设计领域的领先工具。",
+                features: ["智能抠图", "海报生成", "电商设计", "批量处理", "模板丰富"],
+                tech: ["稿定AI", "Computer Vision"],
+                link: "https://www.gaoding.com",
+                color: "#FF6B00"
+            },
+            // 生产力工具
+            {
+                id: 43,
+                name: "秘塔AI搜索",
+                company: "秘塔科技",
+                region: "domestic",
+                location: "🇨🇳 北京",
+                date: "2026-01-20",
+                category: "Search",
+                description: "国内领先的AI搜索工具，彻底颠覆\"搜链接\"的逻辑。界面清爽简洁，没有广告，直达结果。搜索结果整理成带引用的综述答案，支持全网搜索和学术搜索。",
+                features: ["纯净搜索", "无广告", "直达结果", "学术搜索", "答案引用"],
+                tech: ["秘塔AI", "RAG", "Search"],
+                link: "https://metaso.cn",
+                color: "#6366F1"
+            },
+            {
+                id: 44,
+                name: "写作猫",
+                company: "秘塔科技",
+                region: "domestic",
+                location: "🇨🇳 北京",
+                date: "2025-11-10",
+                category: "Productivity",
+                description: "AI写作辅助工具，提供文章续写、语法检查、风格优化等功能。是国内领先的AI写作工具，被广泛用于内容创作和学术写作。",
+                features: ["AI写作", "语法检查", "风格优化", "文章润色", "查重检测"],
+                tech: ["NLP", "Writing AI"],
+                link: "https://xiezuocat.com",
+                color: "#8B5CF6"
+            },
+            {
+                id: 45,
+                name: "博思AIPPT",
+                company: "博思云创",
+                region: "domestic",
+                location: "🇨🇳 深圳",
+                date: "2025-12-15",
+                category: "Productivity",
+                description: "国产AI PPT生成工具，通过自然语言描述快速生成专业演示文稿。支持多种模板和风格，是国内最受欢迎的AI PPT工具之一。",
+                features: ["AI生成PPT", "智能排版", "模板丰富", "一键美化", "协作共享"],
+                tech: ["AIPPT", "LLM", "Design AI"],
+                link: "https://www.betoppt.com",
+                color: "#2563EB"
+            },
+            {
+                id: 46,
+                name: "boardmix AI",
+                company: "Boardmix",
+                region: "domestic",
+                location: "🇨🇳 深圳",
+                date: "2025-11-20",
+                category: "Productivity",
+                description: "AI智能白板工具，支持思维导图、流程图、PPT生成等功能。团队协作和头脑风暴的理想选择，国内用户增长最快的AI办公工具之一。",
+                features: ["思维导图", "流程图", "AI白板", "PPT生成", "团队协作"],
+                tech: ["boardmix AI", "Visual AI"],
+                link: "https://boardmix.cn",
+                color: "#06B6D4"
+            },
+            {
+                id: 47,
+                name: "亿图图示AI",
+                company: "万兴科技",
+                region: "domestic",
+                location: "🇨🇳 深圳",
+                date: "2025-10-15",
+                category: "Design",
+                description: "亿图图示推出的AI功能，支持智能生成流程图、架构图、思维导图等。是国内图表制作领域的领先工具。",
+                features: ["智能绘图", "流程图生成", "架构图", "思维导图", "模板丰富"],
+                tech: ["亿图AI", "Diagram AI"],
+                link: "https://www.edrawsoft.cn",
+                color: "#3B82F6"
+            },
+            {
+                id: 48,
+                name: "讯飞听见",
+                company: "科大讯飞",
+                region: "domestic",
+                location: "🇨🇳 合肥",
+                date: "2025-10-20",
+                category: "Audio",
+                description: "科大讯飞AI录音转写工具，支持实时语音转文字、会议纪要自动生成、多语言翻译等功能。是国内语音转写领域的领导者。",
+                features: ["语音转写", "会议纪要", "多语种翻译", "实时字幕", "音频编辑"],
+                tech: ["ASR", "TTS", "讯飞星火"],
+                link: "https://www.iflyrec.com",
+                color: "#00C8FF"
+            },
+            {
+                id: 49,
+                name: "通义听悟",
+                company: "阿里巴巴",
+                region: "domestic",
+                location: "🇨🇳 杭州",
+                date: "2025-09-15",
+                category: "Audio",
+                description: "阿里推出的AI音视频转写工具，支持会议记录、课程笔记、视频字幕等功能。与通义千问深度集成，智能化程度高。",
+                features: ["音视频转写", "会议纪要", "课程笔记", "智能摘要", "多语言"],
+                tech: ["通义千问", "ASR", "TTS"],
+                link: "https://tingwu.aliyun.com",
+                color: "#FF6A00"
+            },
+            {
+                id: 50,
+                name: "钉钉AI",
+                company: "阿里巴巴",
+                region: "domestic",
+                location: "🇨🇳 杭州",
+                date: "2025-11-20",
+                category: "Productivity",
+                description: "钉钉集成的AI助手功能，支持智能客服、文档处理、数据分析等企业办公场景。是国内企业级AI办公的领先产品。",
+                features: ["智能客服", "文档处理", "数据分析", "会议助手", "流程自动化"],
+                tech: ["钉钉AI", "通义千问", "企业AI"],
+                link: "https://www.dingtalk.com",
+                color: "#1677FF"
+            },
+            {
+                id: 51,
+                name: "飞书AI",
+                company: "字节跳动",
+                region: "domestic",
+                location: "🇨🇳 北京",
+                date: "2025-11-10",
+                category: "Productivity",
+                description: "飞书办公平台集成的AI功能，提供智能创作、内容总结、对话式搜索等能力。是国内协作办公AI的领先产品。",
+                features: ["AI创作", "内容总结", "对话搜索", "智能客服", "数据分析"],
+                tech: ["飞书AI", "字节大模型"],
+                link: "https://www.feishu.cn",
+                color: "#2F54EB"
+            },
+            {
+                id: 52,
+                name: "笔灵AI",
+                company: "上海秘塔科技",
+                region: "domestic",
+                location: "🇨🇳 上海",
+                date: "2025-10-25",
+                category: "Assistant",
+                description: "面向大众的AI写作助手，支持文章写作、论文辅助、商业文案等多种场景。是国内用户增长最快的AI写作工具之一。",
+                features: ["文章写作", "论文辅助", "商业文案", "内容润色", "多场景覆盖"],
+                tech: ["NLP", "Writing AI"],
+                link: "https://ibiling.cn",
+                color: "#7C3AED"
+            },
+            // AI智能体/Agent
+            {
+                id: 53,
+                name: "扣子空间",
+                company: "字节跳动",
+                region: "domestic",
+                location: "🇨🇳 北京",
+                date: "2026-02-01",
+                category: "Agent",
+                description: "字节跳动推出的免费全能AI办公智能体平台，支持多种工作流和应用创建，是国内领先的AI Agent平台。",
+                features: ["AI智能体", "工作流", "免费使用", "多场景应用", "一键复制"],
+                tech: ["字节大模型", "Coze", "工作流引擎"],
+                link: "https://www.coze.com",
+                color: "#3B82F6"
+            },
+            {
+                id: 54,
+                name: "Manus",
+                company: "蝴蝶效应",
+                region: "domestic",
+                location: "🇨🇳 北京",
+                date: "2026-01-15",
+                category: "Agent",
+                description: "蝴蝶效应公司推出的首款自主通用AI Agent，能够自主推理、联网执行任务，是全球首个通用AI Agent产品。",
+                features: ["通用Agent", "自主执行", "联网能力", "多任务处理", "智能规划"],
+                tech: ["多模态AI", "Agent框架", "任务规划"],
+                link: "https://manus.im",
+                color: "#8B5CF6"
+            },
+            {
+                id: 55,
+                name: "Operator",
+                company: "OpenAI",
+                region: "overseas",
+                location: "🇺🇸 硅谷",
+                date: "2025-12-20",
+                category: "Agent",
+                description: "OpenAI推出的AI智能体，能推理、联网自主执行任务。是全球首个面向消费者的AI Agent产品。",
+                features: ["AI智能体", "自主执行", "联网搜索", "任务自动化", "安全可控"],
+                tech: ["GPT-5", "Agent框架", "安全沙箱"],
+                link: "https://openai.com/operator",
+                color: "#10A37F"
+            },
+            // AI写作工具
+            {
+                id: 56,
+                name: "蛙蛙写作",
+                company: "网络科技",
+                region: "domestic",
+                location: "🇨🇳 北京",
+                date: "2025-11-15",
+                category: "Writing",
+                description: "AI小说和内容创作工具，支持多种类型文章创作，是网文作者的得力助手。",
+                features: ["小说创作", "内容生成", "素材库", "大纲生成", "灵感激发"],
+                tech: ["NLP", "Writing AI"],
+                link: "https://www.wawawx.com",
+                color: "#6366F1"
+            },
+            {
+                id: 57,
+                name: "新华妙笔",
+                company: "新华社",
+                region: "domestic",
+                location: "🇨🇳 北京",
+                date: "2025-10-20",
+                category: "Writing",
+                description: "新华社推出的体制内办公学习平台，提供公文写作辅助功能。",
+                features: ["公文写作", "体制内", "范文参考", "智能润色", "素材库"],
+                tech: ["NLP", "Writing AI"],
+                link: "https://www.xhmb.cn",
+                color: "#DC2626"
+            },
+            // AI开发平台
+            {
+                id: 58,
+                name: "阿里云百炼",
+                company: "阿里巴巴",
+                region: "domestic",
+                location: "🇨🇳 杭州",
+                date: "2026-01-10",
+                category: "DevPlatform",
+                description: "阿里云一站式大模型开发与应用构建平台，提供模型训练、部署、应用开发等全链路服务。",
+                features: ["大模型平台", "模型训练", "API调用", "应用开发", "企业服务"],
+                tech: ["通义大模型", "MaaS", "云计算"],
+                link: "https://www.aliyun.com",
+                color: "#FF6A00"
+            },
+            {
+                id: 59,
+                name: "Dify",
+                company: "Dify团队",
+                region: "domestic",
+                location: "🇨🇳 北京",
+                date: "2025-12-15",
+                category: "DevPlatform",
+                description: "开源的生成式AI应用开发平台，支持快速构建AI应用和工作流。",
+                features: ["开源免费", "可视化编排", "工作流", "API接入", "插件扩展"],
+                tech: ["LLM", "工作流引擎", "API网关"],
+                link: "https://dify.ai",
+                color: "#10B981"
+            },
+            {
+                id: 60,
+                name: "FastGPT",
+                company: "FastGPT团队",
+                region: "domestic",
+                location: "🇨🇳 北京",
+                date: "2025-11-20",
+                category: "DevPlatform",
+                description: "免费AI工作流搭建工具，帮助企业自动化提高效率。",
+                features: ["工作流", "知识库", "可视化", "免费使用", "API集成"],
+                tech: ["LLM", "RAG", "工作流"],
+                link: "https://fastgpt.cn",
+                color: "#3B82F6"
+            },
+            // AI编程工具
+            {
+                id: 61,
+                name: "TRAE",
+                company: "字节跳动",
+                region: "domestic",
+                location: "🇨🇳 北京",
+                date: "2026-01-20",
+                category: "DevTools",
+                description: "字节跳动推出的AI IDE编程工具，Vibe Coding必备！支持智能代码补全和项目理解。",
+                features: ["AI IDE", "智能补全", "项目理解", "自然语言编程", "免费使用"],
+                tech: ["字节大模型", "IDE插件", "LLM"],
+                link: "https://www.trae.com.cn",
+                color: "#FE6B00"
+            },
+            {
+                id: 62,
+                name: "CodeFlicker",
+                company: "快手",
+                region: "domestic",
+                location: "🇨🇳 北京",
+                date: "2025-11-10",
+                category: "DevTools",
+                description: "快手推出的AI原生IDE编程工具，支持全栈开发智能辅助。",
+                features: ["AI原生IDE", "代码生成", "项目理解", "全栈支持", "智能补全"],
+                tech: ["快手大模型", "AI IDE"],
+                link: "https://www.kuaishou.com",
+                color: "#FF4906"
+            },
+            // AI图像工具
+            {
+                id: 63,
+                name: "LiblibAI·哩布哩布AI",
+                company: "LiblibAI",
+                region: "domestic",
+                location: "🇨🇳 北京",
+                date: "2026-01-05",
+                category: "Image",
+                description: "国内领先的AI图像创作平台和模型分享社区，提供海量LoRA模型和ControlNet。",
+                features: ["AI绘画", "模型分享", "LoRA模型", "ControlNet", "社区互动"],
+                tech: ["Stable Diffusion", "LoRA", "ControlNet"],
+                link: "https://www.liblib.ai",
+                color: "#8B5CF6"
+            },
+            {
+                id: 64,
+                name: "堆友AI",
+                company: "阿里巴巴",
+                region: "domestic",
+                location: "🇨🇳 杭州",
+                date: "2025-12-20",
+                category: "Image",
+                description: "阿里堆友推出的多风格AI绘画生成器，专业设计师的AI设计服务平台。",
+                features: ["AI绘画", "多风格", "免费使用", "设计服务", "批量生成"],
+                tech: ["阿里AI", "Diffusion"],
+                link: "https://d.design",
+                color: "#FF6A00"
+            },
+            {
+                id: 65,
+                name: "星流AI",
+                company: "LiblibAI",
+                region: "domestic",
+                location: "🇨🇳 北京",
+                date: "2025-11-15",
+                category: "Image",
+                description: "LiblibAI推出的一站式AI设计与创作工具，集成图像生成和编辑功能。",
+                features: ["AI设计", "图像生成", "智能编辑", "一站式", "专业画质"],
+                tech: ["LiblibAI", "Diffusion"],
+                link: "https://www.starflux.ai",
+                color: "#6366F1"
+            },
+            // AI视频工具
+            {
+                id: 66,
+                name: "Vidu",
+                company: "生数科技",
+                region: "domestic",
+                location: "🇨🇳 北京",
+                date: "2026-01-10",
+                category: "Video",
+                description: "生数科技推出的AI视频生成大模型，支持文生视频和图生视频功能。",
+                features: ["文生视频", "图生视频", "高画质", "快速生成", "国产自主"],
+                tech: ["VDM", "Diffusion", "多模态"],
+                link: "https://www.vidu.studio",
+                color: "#3B82F6"
+            },
+            {
+                id: 67,
+                name: "有言",
+                company: "魔珐科技",
+                region: "domestic",
+                location: "🇨🇳 上海",
+                date: "2025-12-15",
+                category: "Video",
+                description: "一站式AI视频创作和3D数字人生成平台，支持虚拟主播和数字人视频制作。",
+                features: ["3D数字人", "AI视频", "虚拟主播", "多场景", "一键生成"],
+                tech: ["3D AI", "数字人", "视频生成"],
+                link: "https://www.youyan.ai",
+                color: "#EC4899"
+            },
+            {
+                id: 68,
+                name: "蝉镜",
+                company: "蝉妈妈",
+                region: "domestic",
+                location: "🇨🇳 厦门",
+                date: "2025-11-20",
+                category: "Video",
+                description: "AI数字人视频生成平台，支持真人形象克隆和智能配音。",
+                features: ["数字人", "形象克隆", "智能配音", "多模板", "商业应用"],
+                tech: ["数字人", "TTS", "形象克隆"],
+                link: "https://www.chanjings.com",
+                color: "#10B981"
+            },
+            // AI音频工具
+            {
+                id: 69,
+                name: "海绵音乐",
+                company: "字节跳动",
+                region: "domestic",
+                location: "🇨🇳 北京",
+                date: "2025-12-10",
+                category: "Audio",
+                description: "字节跳动推出的免费AI音乐创作和发现平台，支持词曲创作和智能编曲。",
+                features: ["AI音乐", "词曲创作", "智能编曲", "免费使用", "灵感推荐"],
+                tech: ["字节AI", "Music Generation"],
+                link: "https://music.haimian.com",
+                color: "#FE6B00"
+            },
+            {
+                id: 70,
+                name: "音疯",
+                company: "昆仑万维",
+                region: "domestic",
+                location: "🇨🇳 北京",
+                date: "2025-11-15",
+                category: "Audio",
+                description: "昆仑万维推出的AI音乐创作平台，一键生成原创歌曲，支持多种风格。",
+                features: ["AI作曲", "一键生成", "多风格", "原创音乐", "版权合规"],
+                tech: ["MusicGen", "音频合成"],
+                link: "https://music.kunlun.com",
+                color: "#8B5CF6"
+            },
+            {
+                id: 71,
+                name: "魔音工坊",
+                company: "出门问问",
+                region: "domestic",
+                location: "🇨🇳 北京",
+                date: "2025-10-20",
+                category: "Audio",
+                description: "AI配音工具，轻松配出媲美真人的声音，支持多种音色和场景。",
+                features: ["AI配音", "声音克隆", "多音色", "情感合成", "商用授权"],
+                tech: ["TTS", "声音克隆", "情感合成"],
+                link: "https://www.moyin.com",
+                color: "#6366F1"
+            },
+            // AI搜索
+            {
+                id: 72,
+                name: "夸克AI",
+                company: "阿里巴巴",
+                region: "domestic",
+                location: "🇨🇳 杭州",
+                date: "2026-02-05",
+                category: "Search",
+                description: "集AI搜索、网盘、文档、创作等功能于一体的超级应用，2026年全面升级。",
+                features: ["AI搜索", "智能助手", "办公套件", "文件管理", "多模态"],
+                tech: ["通义千问", "AI搜索", "多模态"],
+                link: "https://www.quark.cn",
+                color: "#2563EB"
+            },
+            {
+                id: 73,
+                name: "SearchGPT",
+                company: "OpenAI",
+                region: "overseas",
+                location: "🇺🇸 硅谷",
+                date: "2025-11-15",
+                category: "Search",
+                description: "OpenAI最新推出的AI搜索引擎，基于GPT模型提供实时网络信息检索。",
+                features: ["AI搜索", "实时信息", "答案溯源", "自然语言", "深度理解"],
+                tech: ["GPT-5", "搜索索引", "RAG"],
+                link: "https://search.chatgpt.com",
+                color: "#10A37F"
+            },
+            {
+                id: 74,
+                name: "纳米AI",
+                company: "360",
+                region: "domestic",
+                location: "🇨🇳 北京",
+                date: "2026-01-20",
+                category: "Search",
+                description: "360推出的新一代超级AI搜索工具，整合多项AI能力提供智能搜索服务。",
+                features: ["AI搜索", "智能摘要", "多模态", "安全可信", "场景覆盖"],
+                tech: ["360AI", "大模型", "搜索"],
+                link: "https://www.nanohai.com",
+                color: "#00A4EF"
+            },
+            // AI学习
+            {
+                id: 75,
+                name: "AI大学堂",
+                company: "科大讯飞",
+                region: "domestic",
+                location: "🇨🇳 合肥",
+                date: "2025-10-15",
+                category: "Learning",
+                description: "科大讯飞推出的在线AI学习平台，提供丰富的AI课程和实践机会。",
+                features: ["AI课程", "在线学习", "实践项目", "认证证书", "社区互动"],
+                tech: ["讯飞星火", "在线教育"],
+                link: "https://www.aidaxuetang.com",
+                color: "#00C8FF"
+            }
+        ];
+
+        let currentTab = 'all';
+        let favorites = JSON.parse(localStorage.getItem('aiFavorites') || '[]');
+
+        function getInitials(name) {
+            return name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+        }
+
+        function getCategoryLabel(category) {
+            const labels = {
+                'LLM': '大语言模型',
+                'Multimodal': '多模态模型',
+                'Image': '图像生成',
+                'Video': '视频生成',
+                'Audio': '音频/音乐',
+                'Design': '设计工具',
+                'DevTools': '开发工具',
+                'DevPlatform': '开发平台',
+                'Productivity': '生产力工具',
+                'Search': 'AI搜索',
+                'Assistant': 'AI助手',
+                'Agent': 'AI智能体',
+                'Writing': 'AI写作',
+                'Learning': 'AI学习'
+            };
+            return labels[category] || category;
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diff = now - date;
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            
+            if (days === 0) return '今天';
+            if (days === 1) return '昨天';
+            if (days < 7) return `${days}天前`;
+            return date.toLocaleDateString('zh-CN');
+        }
+
+        function isFavorite(id) {
+            return favorites.includes(id);
+        }
+
+        function toggleFavorite(id, event) {
+            event.stopPropagation();
+            if (isFavorite(id)) {
+                favorites = favorites.filter(f => f !== id);
+            } else {
+                favorites.push(id);
+            }
+            localStorage.setItem('aiFavorites', JSON.stringify(favorites));
+            renderProducts();
+            updateStats();
+            showNotification(isFavorite(id) ? '已添加到收藏' : '已取消收藏');
+        }
+
+        function getFilteredProducts() {
+            const searchInput = document.getElementById('searchInput').value.toLowerCase();
+            const regionFilter = document.getElementById('regionFilter').value;
+            const categoryFilter = document.getElementById('categoryFilter').value;
+
+            return aiProducts.filter(product => {
+                const matchesSearch = product.name.toLowerCase().includes(searchInput) ||
+                    product.company.toLowerCase().includes(searchInput) ||
+                    product.description.toLowerCase().includes(searchInput) ||
+                    product.features.some(f => f.toLowerCase().includes(searchInput));
+                
+                const matchesRegion = regionFilter === 'all' || 
+                    (regionFilter === 'overseas' && product.region === 'overseas') ||
+                    (regionFilter === 'domestic' && product.region === 'domestic');
+                
+                const matchesCategory = categoryFilter === 'all' || product.category === categoryFilter;
+
+                let matchesTab = true;
+                if (currentTab === 'overseas') matchesTab = product.region === 'overseas';
+                else if (currentTab === 'domestic') matchesTab = product.region === 'domestic';
+                else if (currentTab === 'favorites') matchesTab = isFavorite(product.id);
+
+                return matchesSearch && matchesRegion && matchesCategory && matchesTab;
+            });
+        }
+
+        function renderProducts() {
+            const products = getFilteredProducts();
+            const grid = document.getElementById('productsGrid');
+            const emptyState = document.getElementById('emptyState');
+            
+            grid.className = 'products-grid';
+
+            if (products.length === 0) {
+                grid.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            grid.innerHTML = products.map((product, index) => `
+                <div class="product-card fade-in stagger-${(index % 6) + 1}">
+                    <div class="product-header">
+                        <div class="product-logo" style="background: ${product.color}">
+                            ${getInitials(product.name)}
+                        </div>
+                        <div class="product-actions">
+                            <button class="icon-btn ${isFavorite(product.id) ? 'favorited' : ''}" 
+                                onclick="toggleFavorite(${product.id}, event)" title="收藏">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" 
+                                    fill="${isFavorite(product.id) ? 'currentColor' : 'none'}" 
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <h3 class="product-title">${product.name}</h3>
+                    <p class="product-company">${product.company}</p>
+                    <div class="product-meta">
+                        <span class="meta-tag region">${product.location}</span>
+                        <span class="meta-tag date">${formatDate(product.date)}</span>
+                        <span class="meta-tag category">${getCategoryLabel(product.category)}</span>
+                    </div>
+                    <p class="product-description">${product.description}</p>
+                    <div class="product-features">
+                        ${product.features.slice(0, 4).map(f => `<span class="feature-tag">${f}</span>`).join('')}
+                    </div>
+                    <div class="product-footer">
+                        <a href="${product.link}" target="_blank" class="product-link">
+                            官网
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                        </a>
+                        <a href="https://www.google.com/search?q=${encodeURIComponent(product.name + (product.region === 'overseas' ? ' latest news' : ' 最新快讯'))}" target="_blank" class="product-link">
+                            了解更多
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                        </a>
+                        <div class="tech-stack">
+                            ${product.tech.map(t => `<span class="tech-tag">${t}</span>`).join('')}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.tab === tab);
+            });
+            
+            if (tab === 'news') {
+                document.getElementById('searchSection').style.display = 'none';
+                if (!newsLoaded || crawledNews.length === 0) {
+                    loadCrawledNews().then(() => renderNews());
+                } else {
+                    renderNews();
+                }
+            } else {
+                document.getElementById('searchSection').style.display = 'flex';
+                renderProducts();
+            }
+            updateStats();
+        }
+
+        function filterProducts() {
+            renderProducts();
+            updateStats();
+        }
+
+        function updateStats() {
+            if (!aiProducts || aiProducts.length === 0) {
+                console.log('aiProducts not found or empty');
+                return;
+            }
+            
+            const total = aiProducts.length;
+            const overseas = aiProducts.filter(p => p.region === 'overseas').length;
+            const domestic = aiProducts.filter(p => p.region === 'domestic').length;
+            const thisMonth = aiProducts.filter(p => {
+                const date = new Date(p.date);
+                const now = new Date();
+                return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+            }).length;
+
+            const setContent = (id, value) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = value;
+            };
+
+            setContent('totalCount', total);
+            setContent('overseasCount', overseas);
+            setContent('domesticCount', domestic);
+            setContent('thisMonthCount', thisMonth);
+            setContent('tabAll', total);
+            setContent('tabOverseas', overseas);
+            setContent('tabDomestic', domestic);
+            setContent('tabFavorites', favorites.length);
+            setContent('tabNews', crawledNews.length > 0 ? crawledNews.length : 0);
+        }
+
+        const aiNews = [
+    {
+        "title": "加载中...",
+        "link": "#",
+        "date": "2026-03-17",
+        "source": "系统",
+        "hot": false
+    }
+];
+
+        let crawledNews = [];
+        let newsLoading = false;
+        let newsLoaded = false;
+
+        async function loadCrawledNews(force = false) {
+            if (newsLoading && !force) return;
+            if (newsLoaded && !force) return;
+            
+            newsLoading = true;
+            try {
+                const response = await fetch('news-data.json', {
+                    cache: 'no-cache',
+                    headers: { 'Cache-Control': 'no-cache' }
+                });
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
+                
+                const newsArray = data.history || data.news || [];
+                if (newsArray.length > 0) {
+                    crawledNews = newsArray;
+                    newsLoaded = true;
+                    console.log('✅ 加载了 ' + crawledNews.length + ' 条资讯 (含历史)');
+                    if (currentTab === 'news') {
+                        renderNews();
+                    }
+                } else {
+                    console.log('⚠️ 数据为空，保留默认数据');
+                }
+            } catch (e) {
+                console.log('⚠️ 无法加载抓取数据: ' + e.message);
+            } finally {
+                newsLoading = false;
+            }
+        }
+
+        function refreshNews() {
+            newsLoaded = false;
+            crawledNews = [];
+            loadCrawledNews(true).then(() => {
+                showNotification('资讯已刷新');
+            });
+        }
+
+        function getAllNews() {
+            if (crawledNews.length > 0) {
+                const today = new Date().toISOString().split('T')[0];
+                return crawledNews.map(n => ({
+                    title: n.title,
+                    link: n.link,
+                    date: n.date,
+                    source: n.source,
+                    region: n.region,
+                    hot: n.date === today
+                }));
+            }
+            return [{
+                title: '暂无资讯数据',
+                link: '#',
+                date: new Date().toISOString().split('T')[0],
+                source: '系统',
+                hot: false,
+                summary: '请点击上方"刷新数据"按钮获取最新资讯'
+            }];
+        }
+
+        let newsSearchQuery = '';
+        let newsPage = 1;
+        const NEWS_PER_PAGE = 10;
+
+        function getTimeRange() {
+            const endDate = new Date();
+            const startDate = new Date();
+            startDate.setDate(startDate.getDate() - 30);
+            return {
+                start: startDate.toISOString().split('T')[0],
+                end: endDate.toISOString().split('T')[0],
+                startDate: startDate,
+                endDate: endDate
+            };
+        }
+
+        function filterByTimeRange(news) {
+            const { start, end } = getTimeRange();
+            return news.filter(n => {
+                const newsDate = n.date || '';
+                return newsDate >= start && newsDate <= end;
+            });
+        }
+
+        function renderNews() {
+            const allNews = getAllNews();
+            const timeFilteredNews = filterByTimeRange(allNews);
+            
+            const filteredNews = newsSearchQuery 
+                ? timeFilteredNews.filter(n => 
+                    n.title.toLowerCase().includes(newsSearchQuery.toLowerCase()) ||
+                    (n.summary && n.summary.toLowerCase().includes(newsSearchQuery.toLowerCase())) ||
+                    n.source.toLowerCase().includes(newsSearchQuery.toLowerCase())
+                  )
+                : timeFilteredNews;
+
+            const totalPages = Math.ceil(filteredNews.length / NEWS_PER_PAGE);
+            const startIndex = (newsPage - 1) * NEWS_PER_PAGE;
+            const pagedNews = filteredNews.slice(startIndex, startIndex + NEWS_PER_PAGE);
+
+            const { start, end } = getTimeRange();
+            const timeRangeText = `${start} 至 ${end}`;
+
+            const grid = document.getElementById('productsGrid');
+            grid.className = 'news-grid';
+            
+            let html = `
+                <div class="news-header-bar">
+                    <div class="news-search-box">
+                        <input type="text" 
+                               id="newsSearchInput" 
+                               placeholder="🔍 搜索资讯..." 
+                               value="${newsSearchQuery}"
+                               oninput="handleNewsSearch(this.value)">
+                        ${newsSearchQuery ? `<span class="news-search-clear" onclick="clearNewsSearch()">✕</span>` : ''}
+                    </div>
+                    <span class="news-auto-update">🔄 最后更新: ${new Date().toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'})}</span>
+                </div>
+                <div class="news-time-filter">
+                    <span class="time-filter-icon">📅</span>
+                    <span class="time-filter-text">最近一个月（含今天）</span>
+                    <span class="time-filter-range">${timeRangeText}</span>
+                </div>
+            `;
+
+            if (filteredNews.length === 0) {
+                html += `
+                    <div class="news-empty">
+                        <div class="news-empty-icon">📭</div>
+                        <div class="news-empty-title">暂无符合条件的资讯</div>
+                        <div class="news-empty-desc">时间范围内没有找到相关资讯，请尝试调整搜索条件或刷新数据</div>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="news-count-info">
+                        ${newsSearchQuery 
+                            ? `找到 ${filteredNews.length} 条相关资讯` 
+                            : `共 ${filteredNews.length} 条资讯 (最近30天)`}
+                    </div>
+                `;
+                
+                html += pagedNews.map(news => `
+                    <div class="news-card ${news.hot ? 'hot' : ''}" onclick="window.open('${news.link}', '_blank')">
+                        <div class="news-header">
+                            ${news.hot ? '<span class="news-hot">🔥 热门</span>' : ''}
+                            <span class="news-date">${news.date}</span>
+                        </div>
+                        <h3 class="news-title">${highlightMatch(news.title, newsSearchQuery)}</h3>
+                        <p class="news-summary">${highlightMatch(news.summary || '', newsSearchQuery)}</p>
+                        <div class="news-footer">
+                            <span class="news-source">${news.source}</span>
+                            <span class="news-read-more" onclick="event.stopPropagation(); window.open('${news.link}', '_blank')">阅读全文 →</span>
+                        </div>
+                    </div>
+                `).join('');
+
+                if (totalPages > 1) {
+                    html += `
+                        <div class="news-pagination">
+                            <button class="page-btn ${newsPage === 1 ? 'disabled' : ''}" 
+                                    onclick="goToNewsPage(${newsPage - 1})" 
+                                    ${newsPage === 1 ? 'disabled' : ''}>
+                                上一页
+                            </button>
+                            <span class="page-info">${newsPage} / ${totalPages}</span>
+                            <button class="page-btn ${newsPage === totalPages ? 'disabled' : ''}" 
+                                    onclick="goToNewsPage(${newsPage + 1})" 
+                                    ${newsPage === totalPages ? 'disabled' : ''}>
+                                下一页
+                            </button>
+                        </div>
+                    `;
+                }
+            }
+            
+            grid.innerHTML = html;
+        }
+
+        function goToNewsPage(page) {
+            const allNews = getAllNews();
+            const timeFilteredNews = filterByTimeRange(allNews);
+            const filteredNews = newsSearchQuery 
+                ? timeFilteredNews.filter(n => 
+                    n.title.toLowerCase().includes(newsSearchQuery.toLowerCase()) ||
+                    (n.summary && n.summary.toLowerCase().includes(newsSearchQuery.toLowerCase())) ||
+                    n.source.toLowerCase().includes(newsSearchQuery.toLowerCase())
+                  )
+                : timeFilteredNews;
+            
+            const totalPages = Math.ceil(filteredNews.length / NEWS_PER_PAGE);
+            
+            if (page >= 1 && page <= totalPages) {
+                newsPage = page;
+                renderNews();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function handleNewsSearch(query) {
+            newsSearchQuery = query;
+            newsPage = 1;
+            renderNews();
+        }
+
+        function clearNewsSearch() {
+            newsSearchQuery = '';
+            newsPage = 1;
+            document.getElementById('newsSearchInput').value = '';
+            renderNews();
+        }
+
+        function highlightMatch(text, query) {
+            if (!query || !text) return text;
+            const regex = new RegExp('(' + query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+            return text.replace(regex, '<mark>$1</mark>');
+        }
+
+        function refreshData() {
+            const btn = document.getElementById('refreshBtn');
+            btn.classList.add('loading');
+            
+            loadCrawledNews(true).then(() => {
+                btn.classList.remove('loading');
+                updateLastTime();
+                const newsCount = crawledNews.length > 0 ? crawledNews.length : 0;
+                showNotification(`数据已更新: ${aiProducts.length} 个产品, ${newsCount} 条资讯`);
+                if (currentTab === 'news') {
+                    renderNews();
+                }
+            }).catch(() => {
+                btn.classList.remove('loading');
+                showNotification('数据更新失败，请稍后重试');
+            });
+        }
+
+        function updateLastTime() {
+            const now = new Date();
+            document.getElementById('lastUpdate').textContent = '最后更新: ' + now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            document.getElementById('notificationText').textContent = message;
+            notification.classList.add('show');
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        function showFavorites() {
+            const modal = document.getElementById('favoritesModal');
+            const list = document.getElementById('favoritesList');
+            
+            if (favorites.length === 0) {
+                list.innerHTML = '<div class="no-favorites">暂无收藏产品</div>';
+            } else {
+                const favoriteProducts = aiProducts.filter(p => favorites.includes(p.id));
+                list.innerHTML = favoriteProducts.map(product => `
+                    <div class="favorite-item">
+                        <div class="favorite-item-info">
+                            <div class="favorite-item-logo" style="background: ${product.color}">
+                                ${getInitials(product.name)}
+                            </div>
+                            <div>
+                                <div class="favorite-item-name">${product.name}</div>
+                                <div class="favorite-item-company">${product.company} · ${product.location}</div>
+                            </div>
+                        </div>
+                        <button class="icon-btn" onclick="toggleFavorite(${product.id}, event); showFavorites();" title="取消收藏">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                `).join('');
+            }
+            
+            modal.classList.add('show');
+        }
+
+        function closeFavorites() {
+            document.getElementById('favoritesModal').classList.remove('show');
+        }
+
+        function showNewsModal(newsId) {
+            const news = aiNews.find(n => n.id === newsId);
+            if (!news) return;
+
+            document.getElementById('newsModalTitle').textContent = news.title;
+            document.getElementById('newsModalContent').innerHTML = `
+                <p><strong>📅 发布日期：</strong>${news.date}</p>
+                <p><strong>📰 来源：</strong>${news.source}</p>
+                ${news.summary ? `<h4>内容摘要</h4><p>${news.summary}</p>` : ''}
+                <p style="margin-top: 20px; color: var(--text-muted);">点击下方"查看原文"链接访问原始资讯页面</p>
+            `;
+            document.getElementById('newsModalLink').href = news.link;
+            document.getElementById('newsModal').classList.add('show');
+        }
+
+        function closeNewsModal() {
+            document.getElementById('newsModal').classList.remove('show');
+        }
+
+        document.getElementById('newsModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeNewsModal();
+            }
+        });
+
+        document.getElementById('favoritesModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeFavorites();
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeFavorites();
+                closeNewsModal();
+            }
+        });
+
+        function autoRefresh() {
+            setInterval(() => {
+                updateLastTime();
+                loadCrawledNews(true).then(() => {
+                    if (currentTab === 'news') {
+                        renderNews();
+                    }
+                });
+            }, 3600000);
+        }
+
+        updateLastTime();
+        updateStats();
+        loadCrawledNews().then(() => {
+            if (currentTab === 'news') {
+                renderNews();
+            }
+        });
+        switchTab('all');
+        autoRefresh();
+    </script>
+</body>
+</html>
